@@ -36,7 +36,7 @@ class SettingsPage extends StatefulWidget implements PageShape {
   State<SettingsPage> createState() => _SettingsState();
 }
 
-const url = 'https://rustdesk.com/';
+const url = 'https://helpdesk.console10.ru';
 
 enum KeepScreenOn {
   never,
@@ -985,7 +985,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
             SettingsTile(
               title: Text(translate("Privacy Statement")),
               onPressed: (context) =>
-                  launchUrlString('https://rustdesk.com/privacy.html'),
+                  launchUrlString('https://helpdesk.console10.ru/privacy'),
               leading: Icon(Icons.privacy_tip),
             )
           ],
@@ -1098,7 +1098,7 @@ void showAbout(OverlayDialogManager dialogManager) {
         Text('Version: $version'),
         InkWell(
             onTap: () async {
-              const url = 'https://rustdesk.com/';
+              const url = 'https://helpdesk.console10.ru';
               await launchUrl(Uri.parse(url));
             },
             child: Padding(
