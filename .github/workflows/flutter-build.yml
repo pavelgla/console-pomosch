@@ -351,7 +351,9 @@ jobs:
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
           pushd ./res/msi
-          python preprocess.py --arp -d ../../rustdesk
+          # MSI ждёт exe с именем $(Product).exe = ConsoleHelp.exe; flutter собирает rustdesk.exe → переименуем
+          if (Test-Path ../../rustdesk/rustdesk.exe) { Move-Item -Force ../../rustdesk/rustdesk.exe ../../rustdesk/ConsoleHelp.exe }
+          python preprocess.py --arp --app-name "ConsoleHelp" --manufacturer "ООО Консоль" -d ../../rustdesk
           nuget restore msi.sln
           $msiPlatform = if ('${{ matrix.job.arch }}' -eq 'aarch64') { 'ARM64' } else { 'x64' }
           msbuild msi.sln -p:Configuration=Release -p:Platform=$msiPlatform /p:TargetVersion=Windows10
