@@ -4,6 +4,9 @@
     </IncludeSearchPaths>
     <Configurations>Release</Configurations>
     <Platforms>x64;ARM64</Platforms>
+    <!-- Язык установщика: русский. Наши строки — Package.ru-ru.wxl; стандартные
+         диалоги/кнопки приходят из WixToolset.UI.wixext (ru-RU) автоматически. -->
+    <Cultures>ru-RU</Cultures>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Includes.wxi" />

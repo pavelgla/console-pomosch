@@ -1,0 +1,58 @@
+<!--
+Русская локализация строк установщика «Консоль Помощь».
+Стандартные строки WiX-UI (Далее/Назад/Отмена/лицензия и т.д.) приходят из
+WixToolset.UI.wixext (культура ru-RU) автоматически. Здесь — только наши строки.
+-->
+<WixLocalization Culture="ru-ru" Codepage="1251"
+	xmlns="http://wixtoolset.org/schemas/v4/wxl">
+
+	<String Id="SummaryCodepage" Value="1251" />
+	<String Id="ProductLanguage" Value="1049" />
+
+	<!-- General strings -->
+	<String Id="DowngradeError" Value="Более новая версия [ProductName] уже установлена." />
+
+	<String Id="AR_Comment" Value="Консоль Помощь" />
+
+	<String Id="F_App" Value="Консоль Помощь" />
+	<String Id="F_App_Desc" Value="Консоль Помощь — установка основных компонентов." />
+
+	<String Id="SC_Uninstall" Value="Удалить Консоль Помощь" />
+	<String Id="SC_Uninstall_Desc" Value="Удаление Консоль Помощь или её компонентов с компьютера" />
+
+	<!-- Client related strings -->
+	<String Id="F_Client" Value="Клиент" />
+	<String Id="F_Client_Desc" Value="Пользовательский интерфейс." />
+	<String Id="F_Client_Plugins" Value="Плагины" />
+	<String Id="F_Client_Plugins_Desc" Value="Плагины для клиента." />
+	<String Id="F_LAVFilters" Value="Фильтры LAV" />
+	<String Id="F_LAVFilters_Desc" Value="Рекомендуемые DirectShow-фильтры для лучшего воспроизведения аудио и видео." />
+
+	<String Id="SC_Client" Value="Консоль Помощь" />
+	<String Id="SC_Client_Desc" Value="Запустить Консоль Помощь." />
+
+	<String Id="SC_Client_Tray" Value="Консоль Помощь (в трее)" />
+	<String Id="SC_Client_Tray_Desc" Value="Запустить Консоль Помощь в области уведомлений." />
+
+	<!-- Server related strings -->
+	<String Id="F_Server" Value="Сервер" />
+	<String Id="F_Server_Desc" Value="Серверная часть Консоль Помощь." />
+	<String Id="F_Server_Plugins" Value="Плагины" />
+	<String Id="F_Server_Plugins_Desc" Value="Плагины для сервера." />
+
+	<String Id="Service_DisplayName" Value="Служба Консоль Помощь" />
+	<String Id="Service_Description" Value="Служба обеспечивает работу Консоль Помощь." />
+
+	<!-- Launch Conditions -->
+	<String Id="LC_OS" Value="Для [ProductName] требуется Windows 7 / 2008 R2 или новее." />
+	<String Id="LC_ADMIN" Value="Для установки [ProductName] нужны права администратора." />
+
+	<!-- User Interfaces -->
+	<String Id="AnotherAppDialogTitle" Value="Отмена установки."/>
+	<String Id="AnotherAppDialogDescription" Value="Приложение установлено методом самоустановки. Сначала удалите его, затем повторите установку."/>
+
+	<String Id="MyInstallDirDlgDesktopShortcuts" Value="Создать значок на рабочем столе" />
+	<String Id="MyInstallDirDlgStartMenuShortcuts" Value="Создать ярлыки в меню «Пуск»" />
+	<String Id="MyInstallDirDlgPrinter" Value="Установить принтер Консоль Помощь" />
+
+</WixLocalization>
