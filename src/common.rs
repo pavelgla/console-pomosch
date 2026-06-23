@@ -1072,6 +1072,11 @@ fn get_api_server_(api: String, custom: String) -> String {
     if !api.is_empty() {
         return api.to_owned();
     }
+    // Вшитый self-hosted API-сервер (логин/адресная книга) — приоритетнее дефолта
+    // admin.rustdesk.com и эвристики custom-rendezvous-2.
+    if !config::API_SERVER.is_empty() {
+        return config::API_SERVER.to_owned();
+    }
     let s0 = get_custom_rendezvous_server(custom);
     if !s0.is_empty() {
         let s = crate::increase_port(&s0, -2);
