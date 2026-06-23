@@ -1,16 +1,16 @@
 [Unit]
-Description=RustDesk
+Description=Консоль Помощь
 Requires=network.target
 After=systemd-user-sessions.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/rustdesk --service
+ExecStart=/usr/bin/consolehelp --service
 # kill --tray and --server both
-ExecStop=pkill -f "rustdesk --"
+ExecStop=pkill -f "consolehelp --"
 # below two lines do not work, have to use above one line
-#ExecStop=pkill -f "rustdesk --tray"
-#ExecStop=pkill -f "rustdesk --server"
+#ExecStop=pkill -f "consolehelp --tray"
+#ExecStop=pkill -f "consolehelp --server"
 PIDFile=/run/rustdesk.pid
 KillMode=mixed
 TimeoutStopSec=30
