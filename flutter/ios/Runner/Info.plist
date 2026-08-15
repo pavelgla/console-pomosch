@@ -71,9 +71,9 @@
   <key>io.flutter.embedded_views_preview</key>
   <true/>
   <key>NSCameraUsageDescription</key>
-  <string>This app needs camera access to scan QR codes</string>
+  <string>Камера нужна, чтобы отсканировать QR-код подключения</string>
   <key>NSPhotoLibraryUsageDescription</key>
-  <string>This app needs photo library access to get QR codes from image</string>
+  <string>Доступ к фото нужен, чтобы распознать QR-код подключения из картинки</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
