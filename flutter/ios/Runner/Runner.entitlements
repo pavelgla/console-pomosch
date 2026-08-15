@@ -2,9 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>aps-environment</key>
-	<string>development</string>
-	<key>com.apple.developer.networking.wifi-info</key>
-	<true/>
+	<!-- Пусто намеренно. Апстрим объявлял aps-environment (push) и
+	     com.apple.developer.networking.wifi-info, но ни то, ни другое в коде не
+	     используется: AppDelegate не вызывает registerForRemoteNotifications.
+	     Лишние entitlements ломают подпись App Store-профилем, а
+	     aps-environment=development для App Store недопустим вовсе. -->
 </dict>
 </plist>

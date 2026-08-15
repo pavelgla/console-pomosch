@@ -1,0 +1,88 @@
+# Fastlane: подписанная сборка «Консоль Помощь» для iOS/iPadOS + заливка в TestFlight.
+#
+# Аутентификация — App Store Connect API key (.p8 через env ASC_KEY_PATH), без Apple ID и
+# паролей приложений. Подпись — РУЧНАЯ distribution: готовый сертификат из .p12 (на раннере
+# не генерим — у Apple лимит на число distribution-сертификатов, CI их сожжёт) плюс sigh с
+# App Store-профилем: он, в отличие от Development, не требует списка зарегистрированных
+# устройств. setup_ci готовит временный keychain.
+#
+# export options задаются здесь кодом. Апстримовый flutter/ios/exportOptions.plist удалён
+# намеренно: он невалиден («умные» кавычки) и принадлежит команде RustDesk.
+default_platform(:ios)
+
+APP_ID = "ru.console10.consolehelp"
+
+platform :ios do
+  desc "Собрать и залить бету в TestFlight"
+  lane :beta do
+    setup_ci
+
+    team = ENV["APPSTORE_TEAM_ID"]
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APPSTORE_KEY_ID"],
+      issuer_id: ENV["APPSTORE_ISSUER_ID"],
+      key_filepath: ENV["ASC_KEY_PATH"],
+      in_house: false,
+    )
+
+    # Готовый distribution-сертификат из секрета.
+    import_certificate(
+      certificate_path: ENV["DIST_CERT_PATH"],
+      certificate_password: ENV["APPLE_DIST_CERT_PASSWORD"],
+      keychain_name: ENV["MATCH_KEYCHAIN_NAME"],
+      keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"],
+    )
+
+    # Имя профиля задаём литералом и им же подписываем: fastlane кладёт имя в env-переменную
+    # под другим ключом, и на этом легко разъехаться.
+    profile_name = "#{APP_ID} AppStore"
+    sigh(
+      api_key: api_key,
+      app_identifier: APP_ID,
+      provisioning_name: profile_name,
+      force: true,
+    )
+
+    # Ручная подпись — ТОЛЬКО на свой таргет. Через xcargs она применилась бы и к
+    # Pods/SwiftPM, а те профилей не поддерживают: «does not support provisioning profiles».
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "Runner.xcodeproj",
+      team_id: team,
+      code_sign_identity: "Apple Distribution",
+      profile_name: profile_name,
+      bundle_identifier: APP_ID,
+      targets: ["Runner"],
+    )
+
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      export_method: "app-store",
+      output_directory: "../build/ios-ipa",
+      output_name: "consolehelp.ipa",
+      export_options: {
+        method: "app-store",
+        teamID: team,
+        signingStyle: "manual",
+        provisioningProfiles: {
+          APP_ID => profile_name,
+        },
+      },
+    )
+
+    # Заливка требует существующей записи приложения в App Store Connect — её Apple не даёт
+    # создать ключом API (нет CREATE на ресурс apps). Если записи ещё нет, сборку не валим:
+    # .ipa подписан и уедет артефактом, заливка пройдёт при повторном запуске.
+    begin
+      upload_to_testflight(
+        api_key: api_key,
+        skip_waiting_for_build_processing: true,
+        skip_submission: true,
+      )
+    rescue => e
+      UI.important("TestFlight upload не прошёл (вероятно, нет записи приложения в App Store Connect): #{e.message}")
+      UI.important("Создать приложение с bundle #{APP_ID} и перезапустить — .ipa уже готов как артефакт.")
+    end
+  end
+end
