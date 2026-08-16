@@ -92,9 +92,9 @@ BEGIN
             VALUE "CompanyName", "Console10" "\0"
             VALUE "FileDescription", "Консоль Помощь — удалённая поддержка" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "rustdesk" "\0"
+            VALUE "InternalName", "consolehelp" "\0"
             VALUE "LegalCopyright", "Copyright © 2026 Console10. All rights reserved." "\0"
-            VALUE "OriginalFilename", "rustdesk.exe" "\0"
+            VALUE "OriginalFilename", "consolehelp.exe" "\0"
             VALUE "ProductName", "Консоль Помощь" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
