@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name=RustDesk
+Name=Консоль Помощь
 NoDisplay=true
-MimeType=x-scheme-handler/rustdesk;
-TryExec=rustdesk
+MimeType=x-scheme-handler/consolehelp;
+TryExec=consolehelp
 Exec=consolehelp %u
 Icon=consolehelp
 Terminal=false
