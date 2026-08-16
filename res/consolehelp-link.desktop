@@ -8,4 +8,4 @@ Icon=consolehelp
 Terminal=false
 Type=Application
 StartupNotify=false
-StartupWMClass=rustdesk
+StartupWMClass=consolehelp
