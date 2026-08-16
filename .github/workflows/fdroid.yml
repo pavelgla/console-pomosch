@@ -16,6 +16,7 @@ jobs:
   update-fdroid-version-file:
     name: Publish RustDesk version file for F-Droid updater
     runs-on: ubuntu-latest
+    if: false  # отключено: F-Droid не публикуем (ребренд только flutter .deb/.msi/.exe)
     steps:
       - name: Generate RustDesk version file
         run: |

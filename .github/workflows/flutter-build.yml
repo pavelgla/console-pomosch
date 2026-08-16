@@ -381,8 +381,7 @@ jobs:
   build-for-windows-sciter:
     name: ${{ matrix.job.target }} (${{ matrix.job.os }})
     runs-on: ${{ matrix.job.os }}
-    # Temporarily disable this action due to additional test is needed.
-    # if: false
+    if: false  # отключено: sciter-windows не раздаём (ребренд только flutter .msi/.exe)
     strategy:
       fail-fast: false
       matrix:
