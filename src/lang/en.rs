@@ -279,5 +279,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("wayland-soft-keyboard-input-label", "Soft keyboard input"),
         ("wayland-keyboard-input-reset-choice-tip", "Reset keyboard input choice"),
         ("remember-wayland-keyboard-choice-tip", "Don't ask again for this remote computer"),
+        ("About RustDesk", "About ConsoleHelp"),
+        ("Show RustDesk", "Show ConsoleHelp"),
+        ("Keep RustDesk background service", "Keep ConsoleHelp background service"),
     ].iter().cloned().collect();
 }
