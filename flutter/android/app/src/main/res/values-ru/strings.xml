@@ -1,0 +1,3 @@
+<resources>
+    <string name="accessibility_service_description">Разрешить другим устройствам управлять вашим телефоном через виртуальные касания, когда установлен сеанс демонстрации экрана ConsoleHelp</string>
+</resources>
