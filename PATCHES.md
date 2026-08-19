@@ -63,3 +63,34 @@
   форка. Подробности — `deploy/contour/RUNBOOK.md` в `~/projects/helpdesk`.
 - **Функциональные ссылки на `rustdesk.com/docs/...`** в подсказках о правах доступа
   (X11/Wayland/macOS) — не бренд-метка, а рабочая документация, аналога которой у нас нет.
+
+## Волна `w-appstore-ios` (19.08.2026) — манифест приватности iOS
+
+Спека: `~/projects/helpdesk/docs/superpowers/specs/2026-08-19-appstore-ios-design.md`.
+План: `~/projects/helpdesk/plans/appstore-ios.md`, Task 4.
+Приёмка: `~/projects/helpdesk/tests/t72-appstore.sh`.
+
+- **Новый `flutter/ios/Runner/PrivacyInfo.xcprivacy`.** Проверен код iOS-реализаций пяти плагинов,
+  закреплённых в `flutter/pubspec.lock` на дату волны: `path_provider_foundation 2.4.1`,
+  `package_info_plus 4.2.0`, `device_info_plus 9.1.2`, `sqflite 2.2.0`, `file_picker 5.5.0`.
+  Из четырёх категорий required-reason API (`UserDefaults`, `FileTimestamp`, `DiskSpace`,
+  `SystemBootTime`) в исходниках этих версий нашлось обращение только к одной: `file_picker`
+  (`ios/Classes/FileUtils.m:92`) вызывает `[[NSFileManager defaultManager]
+  attributesOfItemAtPath:path error:nil]` — это сигнатура из официального списка File Timestamp
+  API. Причина — `C617.1` (метаданные файлов внутри контейнера приложения: `file_picker` читает
+  атрибуты уже выбранных пользователем файлов из своей временной директории).
+  `NSUserDefaults`, `statfs`/`getattrlist`/`volumeAvailableCapacity` (DiskSpace) и
+  `systemUptime`/`mach_absolute_time` (SystemBootTime) в исходниках всех пяти плагинов не
+  встретились — эти три категории в манифест не включены. `path_provider_foundation 2.4.1` несёт
+  собственный `PrivacyInfo.xcprivacy` с пустым `NSPrivacyAccessedAPITypes` — сверка подтверждает
+  вывод независимо. `NSPrivacyCollectedDataTypes` оставлен пустым: ни один из проверенных
+  плагинов сам не передаёт данные за пределы устройства. Шаблон из `~/projects/conv42` (три
+  категории: `UserDefaults`+`FileTimestamp`+`DiskSpace`) не подошёл — там иной набор пакетов
+  (включая `shared_preferences`, которого в этом форке нет) и более новые версии
+  `package_info_plus`/`device_info_plus`.
+- **`flutter/ios/Runner.xcodeproj/project.pbxproj`.** Файл добавлен в таргет `Runner`: запись в
+  `PBXFileReference` (`8D2520E5B200F258E5B7BE57`), в `PBXBuildFile` (`3AB5E0DCBB1D5B8D14BD0825`,
+  `in Resources`), в группу `Runner` (`PBXGroup`) и в `PBXResourcesBuildPhase` таргета `Runner`.
+  `plutil -lint` недоступен на Linux (нет macOS-инструментов); проверена балансировка скобок
+  файла и однократное появление обеих новых записей в ожидаемых секциях — строгий линт переносится
+  на CI-прогон сборки (`ios-build.yml`).
