@@ -16,11 +16,19 @@ name: iOS build (signed)
 
 on:
   workflow_dispatch:
+    inputs:
+      build_number:
+        description: "CFBundleVersion (пусто — номер прогона)"
+        required: false
+        type: string
   workflow_call:
     inputs:
       upload-artifact:
         type: boolean
         default: true
+      build_number:
+        required: false
+        type: string
 
 # ВАЖНО: реюзабельный workflow не наследует env вызывающего, а `env` нельзя подставить
 # в `with:` — поэтому версии продублированы из flutter-build.yml. Совпадение проверяется
@@ -149,7 +157,7 @@ jobs:
           export DIST_CERT_PATH="$RUNNER_TEMP/dist.p12"
           echo "$APPLE_DIST_CERT_P12" | base64 -d > "$DIST_CERT_PATH"
           pushd flutter
-          flutter build ios --release --no-codesign --build-number=${{ github.run_number }}
+          flutter build ios --release --no-codesign --build-number=${{ inputs.build_number || github.run_number }}
           cd ios && fastlane beta
 
       - name: Upload signed .ipa
