@@ -127,10 +127,7 @@ jobs:
           echo 'EXCLUDED_ARCHS[sdk=iphonesimulator*] = x86_64' >> ios/Flutter/Debug.xcconfig
           # integration_test (sdk) требует file 7, ffigen ^8 — file 6: ffigen нужен только для генерации
           # привязок, в съёмке не участвует. Правка pubspec — лишь в рабочей копии раннера.
-          sed -i '' '/^  ffigen:/d' pubspec.yaml
-          sed -i '' 's/^  flutter_test:$/  integration_test:\
-    sdk: flutter\
-  flutter_test:/' pubspec.yaml
+          python3 -c "import re; s=open('pubspec.yaml').read(); s=re.sub(r'^  ffigen:.*\\n','',s,flags=re.M); s=s.replace('  flutter_test:\\n','  integration_test:\\n    sdk: flutter\\n  flutter_test:\\n',1); open('pubspec.yaml','w').write(s)"
           grep -n -B1 -A3 integration_test pubspec.yaml
           flutter pub get
 
