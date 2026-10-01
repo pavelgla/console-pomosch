@@ -985,7 +985,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
             SettingsTile(
               title: Text(translate("Privacy Statement")),
               onPressed: (context) =>
-                  launchUrlString('https://helpdesk.console10.ru/privacy'),
+                  launchUrlString('https://console10.ru/helpdesk/privacy'),
               leading: Icon(Icons.privacy_tip),
             )
           ],

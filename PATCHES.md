@@ -18,6 +18,17 @@
   `namespace "com.carriez.flutter_hbb"` в `android { }`. Побочный эффект для пользователей: новое
   приложение получает пустую приватную папку, у поставившего его вместо старого APK меняется ID
   устройства, постоянный пароль и настройки сбрасываются.
+- **Экран согласия (только Android).** Новый `flutter/lib/mobile/pages/consent_page.dart`
+  (`ConsentGate`: ссылки на `https://console10.ru/helpdesk/privacy` и `/oferta`, кнопка «Принимаю»)
+  и подключение в `flutter/lib/main.dart` (`home:` на Android оборачивает `HomePage`). Флаг
+  `consent-accepted` лежит в локальных опциях, на сервер не уходит. Хранилище передаётся в
+  `ConsentGate` снаружи, чтобы виджет не тянул FFI-мост. Тест: `flutter/test/consent_gate_test.dart`.
+  Причина: RuStore отклонил Переклик 11.09 за отсутствие политики и условий на старте.
+- **Адрес политики в «О программе».** `flutter/lib/mobile/pages/settings_page.dart`:
+  `helpdesk.console10.ru/privacy` → `console10.ru/helpdesk/privacy` (тот же адрес, что в карточке).
+  Десктопные `install_page.dart` и `desktop_setting_page.dart` не тронуты (волна только про Android).
+- **Имя службы Accessibility.** `src/lang/ru.rs` и `src/lang/en.rs`, `android_input_permission_tip2`:
+  «Консоль Помощь Input» → «Консоль Помощь — ввод», как метка службы в `AndroidManifest.xml`.
 
 ## Волна `debrand-full` (16.08.2026) — полная зачистка видимых следов RustDesk
 

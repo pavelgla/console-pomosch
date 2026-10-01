@@ -25,6 +25,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'common.dart';
 import 'consts.dart';
+import 'mobile/pages/consent_page.dart';
 import 'mobile/pages/home_page.dart';
 import 'mobile/pages/server_page.dart';
 import 'mobile/widgets/deploy_dialog.dart';
@@ -518,7 +519,16 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               ? const DesktopTabPage()
               : isWeb
                   ? WebHomePage()
-                  : HomePage(),
+                  : isAndroid
+                      ? ConsentGate(
+                          isAccepted: () =>
+                              bind.mainGetLocalOption(key: kConsentOptionKey) ==
+                              'Y',
+                          onAccept: () async => bind.mainSetLocalOption(
+                              key: kConsentOptionKey, value: 'Y'),
+                          child: HomePage(),
+                        )
+                      : HomePage(),
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
