@@ -73,7 +73,7 @@ void main() {
     await bind.mainSetLocalOption(key: 'access_token', value: resp.access_token!);
     await bind.mainSetLocalOption(
         key: 'user_info', value: jsonEncode(resp.user ?? {}));
-    await gFFI.userModel.refreshCurrentUser();
+    gFFI.userModel.refreshCurrentUser();
     await _wait(tester, 4);
     final abTip = gFFI.peerTabModel.tabTooltip(PeerTabIndex.ab.index);
     final abTab = find.byWidgetPredicate((w) => w is Tooltip && w.message == abTip);

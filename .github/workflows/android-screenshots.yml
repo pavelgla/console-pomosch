@@ -213,6 +213,9 @@ jobs:
           flutter pub add 'dev:integration_test:{"sdk":"flutter"}'
           flutter pub get
 
+      - name: Analyze test
+        run: cd flutter && flutter analyze --no-fatal-warnings --no-fatal-infos integration_test/android_screenshots_test.dart
+
       - name: Shoot
         uses: reactivecircus/android-emulator-runner@v2
         with:
