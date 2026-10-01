@@ -135,6 +135,10 @@ jobs:
           PY
 
       - name: Build rustdesk lib (simulator)
+        env:
+          # bindgen-крейты (coreaudio-sys и др.) передают clang цель `aarch64-apple-ios-sim`, которую clang
+          # не знает; последний --target побеждает.
+          BINDGEN_EXTRA_CLANG_ARGS: "--target=arm64-apple-ios-simulator"
         run: |
           cargo build --locked --features flutter --release --target aarch64-apple-ios-sim --lib
           # Xcode-проект линкует путь устройства; не трогаем pbxproj, а кладём симуляторную библиотеку туда.
