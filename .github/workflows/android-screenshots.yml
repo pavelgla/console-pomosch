@@ -208,6 +208,8 @@ jobs:
           sed -i "s/org.gradle.jvmargs=-Xmx1024M/org.gradle.jvmargs=-Xmx3g/g" flutter/android/gradle.properties
           cd flutter
           # integration_test нужен только съёмке, в pubspec ветки его нет — добавляем в рабочую копию раннера.
+          # ffigen (только кодогенерация) тянет file ^6 и конфликтует с integration_test (file 7).
+          sed -i '/^  ffigen:/d' pubspec.yaml
           flutter pub add 'dev:integration_test:{"sdk":"flutter"}'
           flutter pub get
 
