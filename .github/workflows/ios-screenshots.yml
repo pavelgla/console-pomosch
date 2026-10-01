@@ -90,6 +90,7 @@ jobs:
             exit 1
           fi
           # build.rs scrap ищет библиотеки по `<arch>-<os>` = arm64-ios; симуляторный набор кладём под это имя.
+          python3 .github/scripts/ios-sim-fix-platform.py "$VCPKG_ROOT/installed/arm64-ios-simulator/lib"
           ln -sfn "$VCPKG_ROOT/installed/arm64-ios-simulator" "$VCPKG_ROOT/installed/arm64-ios"
           ls "$VCPKG_ROOT/installed"
 
@@ -104,6 +105,7 @@ jobs:
         with:
           prefix-key: rustdesk-lib-cache-ios-sim
           key: aarch64-apple-ios-sim
+          cache-on-failure: true
 
       - name: Restore bridge files
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
