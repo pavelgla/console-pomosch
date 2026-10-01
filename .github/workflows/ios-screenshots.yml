@@ -111,6 +111,29 @@ jobs:
           name: bridge-artifact
           path: ./
 
+      - name: Patch libsodium-sys for the simulator target
+        run: |
+          # libsodium-sys 0.2.7 не знает цель aarch64-apple-ios-sim (паникует «Unknown iOS build target»).
+          # Правим скачанный исходник только в раннере: сборка как для устройства, но с SDK симулятора.
+          cargo fetch --locked
+          python3 - <<'PY'
+          import glob
+          arm = (
+              '            "aarch64-apple-ios-sim" => {\n'
+              '                cflags += " -arch arm64";\n'
+              '                cflags += &format!(" -isysroot {}", sdk_dir_simulator);\n'
+              '                cflags += &format!(" -mios-simulator-version-min={}", ios_simulator_version_min);\n'
+              '                host_arg = "--host=arm-apple-darwin10".to_string();\n'
+              '            }\n'
+          )
+          for p in glob.glob("/Users/runner/.cargo/registry/src/*/libsodium-sys-0.2.7/build.rs"):
+              s = open(p).read()
+              marker = '            "armv7-apple-ios" => {'
+              assert marker in s
+              open(p, "w").write(s.replace(marker, arm + marker, 1))
+              print("пропатчен", p)
+          PY
+
       - name: Build rustdesk lib (simulator)
         run: |
           cargo build --locked --features flutter --release --target aarch64-apple-ios-sim --lib
