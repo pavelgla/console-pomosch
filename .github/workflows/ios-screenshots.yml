@@ -125,6 +125,13 @@ jobs:
           sed -i '' 's/SUPPORTED_PLATFORMS = iphoneos;/SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";/' ios/Runner.xcodeproj/project.pbxproj
           # Статическая библиотека — только arm64.
           echo 'EXCLUDED_ARCHS[sdk=iphonesimulator*] = x86_64' >> ios/Flutter/Debug.xcconfig
+          # integration_test (sdk) требует file 7, ffigen ^8 — file 6: ffigen нужен только для генерации
+          # привязок, в съёмке не участвует. Правка pubspec — лишь в рабочей копии раннера.
+          sed -i '' '/^  ffigen:/d' pubspec.yaml
+          sed -i '' 's/^  flutter_test:$/  integration_test:\
+    sdk: flutter\
+  flutter_test:/' pubspec.yaml
+          grep -n -B1 -A3 integration_test pubspec.yaml
           flutter pub get
 
       - name: Create simulators
