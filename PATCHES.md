@@ -4,6 +4,21 @@
 волны ребренда (T6–T71, начиная с 22.06.2026) в реестр задним числом не сведены, история по ним —
 в `~/projects/helpdesk/_SUMMARY.md` и коммитах ветки `rebrand`.
 
+## Волна `w-rustore` (02.10.2026) — Android-клиент в RuStore
+
+Спека: `~/projects/helpdesk/docs/superpowers/specs/2026-10-01-rustore-android-design.md`.
+План: `~/projects/helpdesk/plans/rustore-android.md`.
+Приёмка: `~/projects/helpdesk/tests/t73-rustore.sh`.
+
+- **applicationId.** `flutter/android/app/build.gradle`: `com.carriez.flutter_hbb` →
+  `ru.console10.consolehelp` (тот же id, что bundle id на iOS и macOS). Kotlin-пакет
+  `com.carriez.flutter_hbb` и `namespace` (он же атрибут `package` в `AndroidManifest.xml`, AGP 7.3.1)
+  не тронуты: это внутреннее имя классов. **На будущее:** при переходе на AGP 8+ атрибут `package`
+  в манифесте перестанет задавать namespace, понадобится явный
+  `namespace "com.carriez.flutter_hbb"` в `android { }`. Побочный эффект для пользователей: новое
+  приложение получает пустую приватную папку, у поставившего его вместо старого APK меняется ID
+  устройства, постоянный пароль и настройки сбрасываются.
+
 ## Волна `debrand-full` (16.08.2026) — полная зачистка видимых следов RustDesk
 
 Спека: `~/projects/helpdesk/docs/superpowers/specs/2026-08-16-full-debrand.md`.
