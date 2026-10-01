@@ -90,7 +90,20 @@ jobs:
             exit 1
           fi
           # build.rs scrap ищет библиотеки по `<arch>-<os>` = arm64-ios; симуляторный набор кладём под это имя.
-          python3 .github/scripts/ios-sim-fix-platform.py "$VCPKG_ROOT/installed/arm64-ios-simulator/lib"
+          # Порт libvpx (configure) собирает объекты с меткой платформы «iOS» даже под триплет симулятора, и ld
+          # отказывается их линковать. Пересобираем libvpx той же версии (1.15.2) напрямую под симулятор.
+          # generic-gnu: без NEON-ассемблера, для съёмки скорость декодера не важна.
+          SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
+          T="-target arm64-apple-ios14.0-simulator -isysroot $SDK"
+          git clone -q --depth 1 --branch v1.15.2 https://github.com/webmproject/libvpx.git "$RUNNER_TEMP/libvpx-src"
+          mkdir "$RUNNER_TEMP/vpxb" && cd "$RUNNER_TEMP/vpxb"
+          CC="clang $T" CXX="clang++ $T" LD="clang $T" AS="clang $T" \
+            "$RUNNER_TEMP/libvpx-src/configure" --target=generic-gnu --disable-examples --disable-tools \
+            --disable-docs --disable-unit-tests --enable-pic --enable-static --disable-shared > cfg.log 2>&1 \
+            || { tail -40 cfg.log; tail -40 config.log; exit 1; }
+          make -j6 > mk.log 2>&1 || { tail -40 mk.log; exit 1; }
+          cp libvpx.a "$VCPKG_ROOT/installed/arm64-ios-simulator/lib/libvpx.a"
+          cd "$GITHUB_WORKSPACE"
           ln -sfn "$VCPKG_ROOT/installed/arm64-ios-simulator" "$VCPKG_ROOT/installed/arm64-ios"
           ls "$VCPKG_ROOT/installed"
 
