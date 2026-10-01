@@ -11,6 +11,9 @@ name: iOS screenshots (simulator)
 
 on:
   workflow_dispatch:
+  # Пока воркфлоу не на дефолтной ветке, GitHub не даёт его запустить вручную — гоним пушем в ветку съёмки.
+  push:
+    branches: [ci-ios-screenshots]
 
 env:
   RUST_VERSION: "1.75"
