@@ -45,6 +45,7 @@ adb shell wm size; adb shell getprop persist.sys.locale
       *"SHOT "*)
         name="${line##*SHOT }"; name="${name%%[[:space:]]*}"
         adb exec-out screencap -p > "$OUT/$name.png" && echo "[watcher] снимок $name" >> "$OUT/watcher.log"
+        adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" >> "$OUT/watcher.log" 2>&1
         ;;
       *"VIDEO start"*)
         ( adb shell screenrecord --time-limit 60 --bit-rate 6000000 /sdcard/session.mp4 >/dev/null 2>&1 & )
@@ -74,6 +75,7 @@ wait "$WATCH" 2>/dev/null || true
 sleep 3
 adb pull /sdcard/session.mp4 "$OUT/session.mp4" || true
 adb exec-out screencap -p > "$OUT/zz-last.png" || true
+adb logcat -d -s AndroidRuntime:E ActivityManager:I ActivityTaskManager:I flutter:I DEBUG:I libc:F 2>&1 | tail -400 > "$OUT/logcat-filtered.txt"
 ls -la "$OUT"
 python3 - <<'PY'
 import struct, glob
