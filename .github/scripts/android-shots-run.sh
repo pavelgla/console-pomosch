@@ -24,6 +24,9 @@ sleep 10
 adb shell settings put global window_animation_scale 0
 adb shell settings put global transition_animation_scale 0
 adb shell settings put global animator_duration_scale 0
+# Экран не должен гаснуть: сборка внутри `flutter test` идёт минуты, без этого кадры чёрные.
+adb shell settings put system screen_off_timeout 2147483647
+adb shell svc power stayon true
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard || true
 
@@ -44,15 +47,15 @@ adb shell wm size; adb shell getprop persist.sys.locale
     case "$line" in
       *"SHOT "*)
         name="${line##*SHOT }"; name="${name%%[[:space:]]*}"
-        adb exec-out screencap -p > "$OUT/$name.png" && echo "[watcher] снимок $name" >> "$OUT/watcher.log"
-        adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" >> "$OUT/watcher.log" 2>&1
+        adb exec-out screencap -p </dev/null > "$OUT/$name.png" && echo "[watcher] снимок $name" >> "$OUT/watcher.log"
+        adb shell dumpsys window </dev/null | grep -E "mCurrentFocus|mFocusedApp" >> "$OUT/watcher.log" 2>&1
         ;;
       *"VIDEO start"*)
-        ( adb shell screenrecord --time-limit 60 --bit-rate 6000000 /sdcard/session.mp4 >/dev/null 2>&1 & )
+        ( adb shell screenrecord --time-limit 60 --bit-rate 6000000 /sdcard/session.mp4 </dev/null >/dev/null 2>&1 & )
         echo "[watcher] видео старт" >> "$OUT/watcher.log"
         ;;
       *"VIDEO stop"*)
-        sleep 1; adb shell pkill -2 screenrecord || true
+        sleep 1; adb shell pkill -2 screenrecord </dev/null || true
         echo "[watcher] видео стоп" >> "$OUT/watcher.log"
         ;;
       *"DONE"*) break ;;
