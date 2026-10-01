@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# Один прогон съёмки на запущенном эмуляторе (вызывается из android-emulator-runner).
+# Секреты: SHOTS_USER, SHOTS_PASS, SHOTS_PEER_PASS в окружении.
+set -uo pipefail
+ROOT="$PWD"
+OUT="$ROOT/shots"
+mkdir -p "$OUT"
+LOG="$OUT/test.log"
+: > "$LOG"
+
+adb wait-for-device
+adb shell 'while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 2; done'
+adb root || true
+sleep 3
+adb wait-for-device
+
+# Русская локаль системы: без этого интерфейс на английском.
+adb shell setprop persist.sys.locale ru-RU
+adb shell setprop ctl.restart zygote
+sleep 15
+adb wait-for-device
+adb shell 'while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 2; done'
+sleep 10
+adb shell settings put global window_animation_scale 0
+adb shell settings put global transition_animation_scale 0
+adb shell settings put global animator_duration_scale 0
+adb shell input keyevent KEYCODE_WAKEUP
+adb shell wm dismiss-keyguard || true
+
+# Чистый статус-бар: 09:41, полный заряд и сеть.
+adb shell settings put global sysui_demo_allowed 1
+adb shell am broadcast -a com.android.systemui.demo -e command enter >/dev/null
+adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm 0941 >/dev/null
+adb shell am broadcast -a com.android.systemui.demo -e command battery -e level 100 -e plugged false >/dev/null
+adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi show -e level 4 >/dev/null
+adb shell am broadcast -a com.android.systemui.demo -e command network -e mobile hide >/dev/null
+adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false >/dev/null
+
+adb shell wm size; adb shell getprop persist.sys.locale
+
+# Наблюдатель: по строке `SHOT <имя>` в логе теста снимает кадр, по VIDEO start/stop пишет видео.
+(
+  tail -n +1 -F "$LOG" 2>/dev/null | while IFS= read -r line; do
+    case "$line" in
+      *"SHOT "*)
+        name="${line##*SHOT }"; name="${name%%[[:space:]]*}"
+        adb exec-out screencap -p > "$OUT/$name.png" && echo "[watcher] снимок $name" >> "$OUT/watcher.log"
+        ;;
+      *"VIDEO start"*)
+        ( adb shell screenrecord --time-limit 60 --bit-rate 6000000 /sdcard/session.mp4 >/dev/null 2>&1 & )
+        echo "[watcher] видео старт" >> "$OUT/watcher.log"
+        ;;
+      *"VIDEO stop"*)
+        sleep 1; adb shell pkill -2 screenrecord || true
+        echo "[watcher] видео стоп" >> "$OUT/watcher.log"
+        ;;
+      *"DONE"*) break ;;
+    esac
+  done
+) &
+WATCH=$!
+
+cd flutter
+flutter test integration_test/android_screenshots_test.dart -d emulator-5554 \
+  --dart-define=SHOTS_USER="$SHOTS_USER" \
+  --dart-define=SHOTS_PASS="$SHOTS_PASS" \
+  --dart-define=SHOTS_PEER_PASS="$SHOTS_PEER_PASS" 2>&1 | tee -a "$LOG"
+RC=${PIPESTATUS[0]}
+cd "$ROOT"
+
+sleep 5
+echo DONE >> "$LOG"
+wait "$WATCH" 2>/dev/null || true
+sleep 3
+adb pull /sdcard/session.mp4 "$OUT/session.mp4" || true
+adb exec-out screencap -p > "$OUT/zz-last.png" || true
+ls -la "$OUT"
+python3 - <<'PY'
+import struct, glob
+for f in sorted(glob.glob("shots/*.png")):
+    d = open(f, "rb").read(24)
+    print(f, struct.unpack(">II", d[16:24]))
+PY
+exit $RC

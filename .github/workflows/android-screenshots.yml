@@ -1,0 +1,235 @@
+# Съёмка скриншотов для карточки RuStore с Android-эмулятора (экран 1080x1920).
+#
+# Только для съёмки: на релизные сборки не влияет, ничего не подписывает и не публикует.
+# Собирает rust-библиотеку под x86_64 (так же, как build-rustdesk-android в flutter-build.yml),
+# затем в эмуляторе гоняет flutter/integration_test/android_screenshots_test.dart, а кадры
+# снимает хост через `adb exec-out screencap` (в кадре настоящий статус-бар).
+#
+# Секреты: SHOTS_ACCOUNT_USER / SHOTS_ACCOUNT_PASS (демо-учётка api.console10.ru),
+# SHOTS_PEER_PASS (пароль демо-стенда, ID 361107164). Значения маскируются и не печатаются.
+name: Android screenshots (emulator)
+
+on:
+  workflow_dispatch:
+    inputs:
+      lib_run_id:
+        description: "ID прогона, из которого взять готовую библиотеку (пусто — собрать заново)"
+        required: false
+        default: ""
+  # Пока воркфлоу не на дефолтной ветке, GitHub не даёт запустить его вручную — гоним пушем в ветку съёмки.
+  push:
+    branches: [ci-android-screenshots]
+
+env:
+  RUST_VERSION: "1.75"
+  FLUTTER_VERSION: "3.24.5"
+  CARGO_NDK_VERSION: "3.1.2"
+  NDK_VERSION: "r28c"
+  VCPKG_COMMIT_ID: "120deac3062162151622ca4860575a33844ba10b"
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+jobs:
+  generate-bridge:
+    uses: ./.github/workflows/bridge.yml
+
+  lib:
+    needs: [generate-bridge]
+    if: ${{ inputs.lib_run_id == '' }}
+    name: rust lib x86_64-linux-android
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: false
+
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+               clang cmake curl gcc-multilib git g++ g++-multilib \
+               libayatana-appindicator3-dev libasound2-dev libc6-dev libclang-dev \
+               libunwind-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+               libgtk-3-dev libpam0g-dev libpulse-dev libva-dev libxcb-randr0-dev \
+               libxcb-shape0-dev libxcb-xfixes0-dev libxdo-dev libxfixes-dev llvm-dev \
+               nasm ninja-build openjdk-17-jdk-headless pkg-config tree wget
+
+      - name: Checkout source code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          submodules: recursive
+
+      - name: Install flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - uses: nttld/setup-ndk@ed92fe6cadad69be94a966a7ee3271275e62f779 # v1
+        id: setup-ndk
+        with:
+          ndk-version: ${{ env.NDK_VERSION }}
+          add-to-path: true
+
+      - name: Setup vcpkg with Github Actions binary cache
+        uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11
+        with:
+          vcpkgDirectory: /opt/artifacts/vcpkg
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
+          doNotCache: false
+
+      - name: Install vcpkg dependencies
+        shell: bash
+        run: |
+          if ! ./flutter/build_android_deps.sh x86_64; then
+            find "${VCPKG_ROOT}/" -name "*.log" | while read -r _1; do
+              echo "$_1:"; echo "======"; cat "$_1"; echo "======"; echo ""
+            done
+            exit 1
+          fi
+
+      - name: Restore bridge files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: bridge-artifact
+          path: ./
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          components: "rustfmt"
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          prefix-key: rustdesk-lib-cache-android
+          key: x86_64-linux-android
+
+      - name: Build rustdesk lib
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: |
+          rustup target add x86_64-linux-android
+          cargo install cargo-ndk --version ${{ env.CARGO_NDK_VERSION }} --locked
+          ./flutter/ndk_x64.sh
+          mkdir -p out
+          cp ./target/x86_64-linux-android/release/liblibrustdesk.so out/librustdesk.so
+          cp ${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/libc++_shared.so out/
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: shots-lib-x86_64
+          path: out/
+
+  shots:
+    needs: [generate-bridge, lib]
+    if: ${{ always() && needs.generate-bridge.result == 'success' && (needs.lib.result == 'success' || needs.lib.result == 'skipped') }}
+    name: screenshots android emulator
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SHOTS_USER: ${{ secrets.SHOTS_ACCOUNT_USER }}
+      SHOTS_PASS: ${{ secrets.SHOTS_ACCOUNT_PASS }}
+      SHOTS_PEER_PASS: ${{ secrets.SHOTS_PEER_PASS }}
+    steps:
+      - name: Mask secrets
+        run: |
+          echo "::add-mask::$SHOTS_USER"
+          echo "::add-mask::$SHOTS_PASS"
+          echo "::add-mask::$SHOTS_PEER_PASS"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Checkout source code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Patch flutter
+        run: |
+          cd $(dirname $(dirname $(which flutter)))
+          git apply ${{ github.workspace }}/.github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff
+
+      - name: Restore bridge files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: bridge-artifact
+          path: ./
+
+      - name: Restore rust lib (this run)
+        if: ${{ inputs.lib_run_id == '' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: shots-lib-x86_64
+          path: ./libout
+
+      - name: Restore rust lib (earlier run)
+        if: ${{ inputs.lib_run_id != '' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: shots-lib-x86_64
+          path: ./libout
+          run-id: ${{ inputs.lib_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Prepare flutter project
+        run: |
+          mkdir -p flutter/android/app/src/main/jniLibs/x86_64
+          cp libout/librustdesk.so libout/libc++_shared.so flutter/android/app/src/main/jniLibs/x86_64/
+          sed -i "s/org.gradle.jvmargs=-Xmx1024M/org.gradle.jvmargs=-Xmx3g/g" flutter/android/gradle.properties
+          cd flutter
+          # integration_test нужен только съёмке, в pubspec ветки его нет — добавляем в рабочую копию раннера.
+          flutter pub add --dev 'integration_test:{"sdk":"flutter"}'
+          flutter pub get
+
+      - name: Shoot
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          profile: pixel
+          ram-size: 4096M
+          heap-size: 1024M
+          disk-size: 8G
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash .github/scripts/android-shots-run.sh
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: android-screenshots
+          path: shots/
+          if-no-files-found: warn

@@ -94,3 +94,5 @@
   `plutil -lint` недоступен на Linux (нет macOS-инструментов); проверена балансировка скобок
   файла и однократное появление обеих новых записей в ожидаемых секциях — строгий линт переносится
   на CI-прогон сборки (`ios-build.yml`).
+
+- **`.github/workflows/android-screenshots.yml`, `.github/scripts/android-shots-run.sh`, `flutter/integration_test/android_screenshots_test.dart`.** Воркфлоу только для съёмки скриншотов RuStore с Android-эмулятора 1080x1920 (ветка `ci-android-screenshots`, запуск вручную или пушем в неё); на релизные сборки не влияет.
