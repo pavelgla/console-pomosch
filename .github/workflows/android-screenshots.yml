@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       lib_run_id:
-        description: "ID прогона, из которого взять готовую библиотеку (пусто — собрать заново)"
+        description: "ID прогона, из которого взять готовую библиотеку (пусто — собрать заново; при пуше берётся переменная репозитория ANDROID_SHOTS_LIB_RUN)"
         required: false
         default: ""
   # Пока воркфлоу не на дефолтной ветке, GitHub не даёт запустить его вручную — гоним пушем в ветку съёмки.
@@ -34,7 +34,7 @@ jobs:
 
   lib:
     needs: [generate-bridge]
-    if: ${{ inputs.lib_run_id == '' }}
+    if: ${{ inputs.lib_run_id == '' && vars.ANDROID_SHOTS_LIB_RUN == '' }}
     name: rust lib x86_64-linux-android
     runs-on: ubuntu-24.04
     steps:
@@ -186,19 +186,19 @@ jobs:
           path: ./
 
       - name: Restore rust lib (this run)
-        if: ${{ inputs.lib_run_id == '' }}
+        if: ${{ inputs.lib_run_id == '' && vars.ANDROID_SHOTS_LIB_RUN == '' }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: shots-lib-x86_64
           path: ./libout
 
       - name: Restore rust lib (earlier run)
-        if: ${{ inputs.lib_run_id != '' }}
+        if: ${{ inputs.lib_run_id != '' || vars.ANDROID_SHOTS_LIB_RUN != '' }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: shots-lib-x86_64
           path: ./libout
-          run-id: ${{ inputs.lib_run_id }}
+          run-id: ${{ inputs.lib_run_id || vars.ANDROID_SHOTS_LIB_RUN }}
           github-token: ${{ github.token }}
 
       - name: Prepare flutter project
@@ -208,7 +208,7 @@ jobs:
           sed -i "s/org.gradle.jvmargs=-Xmx1024M/org.gradle.jvmargs=-Xmx3g/g" flutter/android/gradle.properties
           cd flutter
           # integration_test нужен только съёмке, в pubspec ветки его нет — добавляем в рабочую копию раннера.
-          flutter pub add --dev 'integration_test:{"sdk":"flutter"}'
+          flutter pub add 'dev:integration_test:{"sdk":"flutter"}'
           flutter pub get
 
       - name: Shoot
