@@ -64,6 +64,17 @@ adb shell wm size; adb shell getprop persist.sys.locale
 ) &
 WATCH=$!
 
+# Диагностика: раз в 20 с фокус окна и маленький снимок.
+mkdir -p "$OUT/diag"
+(
+  for n in $(seq 1 45); do
+    sleep 20
+    echo "t$n $(date +%T) $(adb shell dumpsys window </dev/null | grep -E 'mCurrentFocus' | tr -d '\r')" >> "$OUT/diag/focus.log"
+    adb exec-out screencap -p </dev/null > "$OUT/diag/t$n.png" 2>/dev/null
+  done
+) &
+DIAG=$!
+
 cd flutter
 flutter test integration_test/android_screenshots_test.dart -d emulator-5554 \
   --dart-define=SHOTS_USER="$SHOTS_USER" \
@@ -72,6 +83,7 @@ flutter test integration_test/android_screenshots_test.dart -d emulator-5554 \
 RC=${PIPESTATUS[0]}
 cd "$ROOT"
 
+kill $DIAG 2>/dev/null
 sleep 5
 echo DONE >> "$LOG"
 wait "$WATCH" 2>/dev/null || true
