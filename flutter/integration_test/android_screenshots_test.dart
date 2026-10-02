@@ -96,11 +96,11 @@ void main() {
     await _wait(tester, 6);
     await _shot(tester, '02-address-book');
 
-    // Выход из учётки: с токеном клиент делает secure_tcp, а hbbs 1.1.16 KeyExchange не шлёт.
-    await gFFI.userModel.logOut();
-    await _wait(tester, 2);
-    expect(await bind.mainGetLocalOption(key: 'access_token'), isEmpty,
-        reason: 'после выхода токен должен быть пуст');
+    // Подключение идёт ВОШЕДШИМ клиентом: с токеном клиент делает secure_tcp, и с 02.10 наш
+    // hbbs (helpdesk w-hbbs-secure) отвечает KeyExchange. Токен обязан быть непуст — иначе
+    // кадр сеанса не доказывает, что вошедшие подключаются.
+    expect(await bind.mainGetLocalOption(key: 'access_token'), isNotEmpty,
+        reason: 'подключаемся вошедшим в учётку клиентом');
 
     // 04 — «Поделиться экраном» (до любых системных диалогов).
     final nav = find.descendant(
