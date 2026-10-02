@@ -106,7 +106,7 @@ void main() {
     debugPrint('SESSION ${inSession ? "up" : "DOWN"}');
     await _wait(tester, 10);
     await _shot(tester, '03-session');
-    await _wait(tester, 12);
+    await _wait(tester, 30);
     debugPrint('VIDEO stop');
     debugPrint('DONE');
   }, timeout: const Timeout(Duration(minutes: 20)));

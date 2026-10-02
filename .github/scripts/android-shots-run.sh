@@ -43,7 +43,9 @@ adb shell wm size; adb shell getprop persist.sys.locale
 
 # Наблюдатель: по строке `SHOT <имя>` в логе теста снимает кадр, по VIDEO start/stop пишет видео.
 (
-  tail -n +1 -F "$LOG" 2>/dev/null | while IFS= read -r line; do
+  # Маркеры читаем из logcat (тег flutter): stdout `flutter test` в канал уходит пачкой в конце.
+  adb logcat -c </dev/null
+  adb logcat -v brief 'flutter:I' '*:S' </dev/null 2>/dev/null | while IFS= read -r line; do
     case "$line" in
       *"SHOT "*)
         name="${line##*SHOT }"; name="${name%%[[:space:]]*}"
@@ -84,6 +86,7 @@ RC=${PIPESTATUS[0]}
 cd "$ROOT"
 
 kill $DIAG 2>/dev/null
+pkill -f "adb.*logcat" || true
 sleep 5
 echo DONE >> "$LOG"
 wait "$WATCH" 2>/dev/null || true
