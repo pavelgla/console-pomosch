@@ -4,6 +4,41 @@
 волны ребренда (T6–T71, начиная с 22.06.2026) в реестр задним числом не сведены, история по ним —
 в `~/projects/helpdesk/_SUMMARY.md` и коммитах ветки `rebrand`.
 
+## Волна `w-rustore` (02.10.2026) — Android-клиент в RuStore
+
+Спека: `~/projects/helpdesk/docs/superpowers/specs/2026-10-01-rustore-android-design.md`.
+План: `~/projects/helpdesk/plans/rustore-android.md`.
+Приёмка: `~/projects/helpdesk/tests/t73-rustore.sh`.
+
+- **applicationId.** `flutter/android/app/build.gradle`: `com.carriez.flutter_hbb` →
+  `ru.console10.consolehelp` (тот же id, что bundle id на iOS и macOS). Kotlin-пакет
+  `com.carriez.flutter_hbb` и `namespace` (он же атрибут `package` в `AndroidManifest.xml`, AGP 7.3.1)
+  не тронуты: это внутреннее имя классов. **На будущее:** при переходе на AGP 8+ атрибут `package`
+  в манифесте перестанет задавать namespace, понадобится явный
+  `namespace "com.carriez.flutter_hbb"` в `android { }`. Побочный эффект для пользователей: новое
+  приложение получает пустую приватную папку, у поставившего его вместо старого APK меняется ID
+  устройства, постоянный пароль и настройки сбрасываются.
+- **Экран согласия (только Android).** Новый `flutter/lib/mobile/pages/consent_page.dart`
+  (`ConsentGate`: ссылки на `https://console10.ru/helpdesk/privacy` и `/oferta`, кнопка «Принимаю»)
+  и подключение в `flutter/lib/main.dart` (`home:` на Android оборачивает `HomePage`). Флаг
+  `consent-accepted` лежит в локальных опциях, на сервер не уходит. Хранилище передаётся в
+  `ConsentGate` снаружи, чтобы виджет не тянул FFI-мост. Тест: `flutter/test/consent_gate_test.dart`.
+  Причина: RuStore отклонил Переклик 11.09 за отсутствие политики и условий на старте.
+- **Адрес политики в «О программе».** `flutter/lib/mobile/pages/settings_page.dart`:
+  `helpdesk.console10.ru/privacy` → `console10.ru/helpdesk/privacy` (тот же адрес, что в карточке).
+  Десктопные `install_page.dart` и `desktop_setting_page.dart` не тронуты (волна только про Android).
+- **Имя службы Accessibility.** `src/lang/ru.rs` и `src/lang/en.rs`, `android_input_permission_tip2`:
+  «Консоль Помощь Input» → «Консоль Помощь — ввод», как метка службы в `AndroidManifest.xml`.
+- **Подпись в CI.** `.github/workflows/flutter-build.yml`, обе Android-джобы
+  (`build-rustdesk-android`, `build-rustdesk-android-universal`): первым шагом «Проверить секреты
+  подписи Android» (при `UPLOAD_ARTIFACT == 'true'`) — нет любого из `ANDROID_SIGNING_KEY`,
+  `ANDROID_ALIAS`, `ANDROID_KEY_STORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, джоба падает. Шаги
+  «Publish unsigned apk package» удалены из обеих джоб: Gradle подписывает debug-ключом
+  (`sed ... signingConfigs.debug` оставлен как есть), и без переподписи `sign-android-release`
+  такой файл уходил в релиз. Без `upload-artifact` (CI-прогоны, nightly) поведение прежнее.
+  Имя артефакта универсальной джобы: `rustdesk-${VERSION}-${{ matrix.job.arch }}.apk` (матрицы в
+  джобе нет, выходило `rustdesk-1.4.8-.apk`) → `rustdesk-${VERSION}-universal${suffix}.apk`.
+
 ## Волна `debrand-full` (16.08.2026) — полная зачистка видимых следов RustDesk
 
 Спека: `~/projects/helpdesk/docs/superpowers/specs/2026-08-16-full-debrand.md`.
