@@ -90,9 +90,23 @@ void main() {
     await _shot(tester, '02-address-book');
 
     // 03 — живой сеанс к демо-стенду
-    await connect(globalKey.currentContext!, _peerId, password: _peerPass);
-    final inSession = await _until(
-        tester, () => gFFI.ffiModel.pi.displays.isNotEmpty, 90);
+    var inSession = false;
+    for (var attempt = 1; attempt <= 3 && !inSession; attempt++) {
+      await connect(globalKey.currentContext!, _peerId, password: _peerPass);
+      inSession = await _until(
+          tester, () => gFFI.ffiModel.pi.displays.isNotEmpty, 60);
+      debugPrint('ATTEMPT $attempt ${inSession ? "up" : "failed"}');
+      if (!inSession) {
+        // закрыть окно с ошибкой и вернуться на главный экран перед повтором
+        gFFI.dialogManager.dismissAll();
+        await _wait(tester, 2);
+        final nav = Navigator.of(globalKey.currentContext!);
+        while (nav.canPop()) {
+          nav.pop();
+          await _wait(tester, 1);
+        }
+      }
+    }
     debugPrint('SESSION ${inSession ? "up" : "DOWN"}');
     await _wait(tester, 8);
     await _shot(tester, '03-session');

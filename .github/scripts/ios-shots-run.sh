@@ -9,6 +9,16 @@ rm -rf "$XCH"; mkdir -p "$XCH" "$OUT"
 
 xcrun simctl boot "$UDID"
 xcrun simctl bootstatus "$UDID" -b
+# Интерфейс по-русски: карточка App Store русская. Язык применяется после перезагрузки симулятора.
+xcrun simctl spawn "$UDID" defaults write "Apple Global Domain" AppleLanguages -array ru
+xcrun simctl spawn "$UDID" defaults write "Apple Global Domain" AppleLocale -string ru_RU
+xcrun simctl shutdown "$UDID"
+xcrun simctl boot "$UDID"
+xcrun simctl bootstatus "$UDID" -b
+# Диагностика сети до стенда: с раннера должны открываться порты сервера.
+for p in 21115 21116 21117; do nc -vz -w 8 rs.console10.ru $p 2>&1 | tail -1; done
+xcrun simctl spawn "$UDID" log stream --style compact --predicate 'process == "Runner"' > "$OUT/app-log.txt" 2>&1 &
+LOGPID=$!
 xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 \
   --cellularMode active --cellularBars 4 --wifiMode active --wifiBars 3 --operatorName ""
 xcrun simctl ui "$UDID" appearance light || true
@@ -29,6 +39,7 @@ RC=${PIPESTATUS[0]}
 set -e
 cd "$ROOT"
 
+kill "$LOGPID" 2>/dev/null || true
 touch "$XCH/done"
 wait "$WATCH" || true
 cp "$RUNNER_TEMP/test-$KIND.log" "$OUT/test.log"
