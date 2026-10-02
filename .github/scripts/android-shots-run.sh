@@ -41,27 +41,34 @@ adb shell am broadcast -a com.android.systemui.demo -e command notifications -e 
 
 adb shell wm size; adb shell getprop persist.sys.locale
 
-# Наблюдатель: по строке `SHOT <имя>` в логе теста снимает кадр, по VIDEO start/stop пишет видео.
+# Наблюдатель: тест кладёт маркеры в каталог данных приложения (adb root), по ним снимаем кадры и пишем видео.
+MARKDIR=/data/user/0/com.carriez.flutter_hbb/app_flutter/shotreq
 (
-  # Маркеры читаем из logcat (тег flutter): stdout `flutter test` в канал уходит пачкой в конце.
-  adb logcat -c </dev/null
-  adb logcat -v brief 'flutter:I' '*:S' </dev/null 2>/dev/null | while IFS= read -r line; do
-    case "$line" in
-      *"SHOT "*)
-        name="${line##*SHOT }"; name="${name%%[[:space:]]*}"
-        adb exec-out screencap -p </dev/null > "$OUT/$name.png" && echo "[watcher] снимок $name" >> "$OUT/watcher.log"
-        adb shell dumpsys window </dev/null | grep -E "mCurrentFocus|mFocusedApp" >> "$OUT/watcher.log" 2>&1
-        ;;
-      *"VIDEO start"*)
-        ( adb shell screenrecord --time-limit 60 --bit-rate 6000000 /sdcard/session.mp4 </dev/null >/dev/null 2>&1 & )
-        echo "[watcher] видео старт" >> "$OUT/watcher.log"
-        ;;
-      *"VIDEO stop"*)
-        sleep 1; adb shell pkill -2 screenrecord </dev/null || true
-        echo "[watcher] видео стоп" >> "$OUT/watcher.log"
-        ;;
-      *"DONE"*) break ;;
-    esac
+  seen=""
+  for tick in $(seq 1 6000); do
+    sleep 0.5
+    list=$(adb shell "ls $MARKDIR 2>/dev/null" </dev/null | tr -d '\r')
+    for m in $list; do
+      case " $seen " in *" $m "*) continue ;; esac
+      seen="$seen $m"
+      kind="${m#*_}"
+      case "$kind" in
+        SHOT_*)
+          name="${kind#SHOT_}"
+          adb exec-out screencap -p </dev/null > "$OUT/$name.png" && echo "[watcher] снимок $name" >> "$OUT/watcher.log"
+          adb shell dumpsys window </dev/null | grep -E "mCurrentFocus" >> "$OUT/watcher.log" 2>&1
+          ;;
+        VIDEOSTART)
+          ( adb shell screenrecord --time-limit 70 --bit-rate 6000000 /sdcard/session.mp4 </dev/null >/dev/null 2>&1 & )
+          echo "[watcher] видео старт" >> "$OUT/watcher.log"
+          ;;
+        VIDEOSTOP)
+          adb shell pkill -2 screenrecord </dev/null || true
+          echo "[watcher] видео стоп" >> "$OUT/watcher.log"
+          ;;
+        DONE) exit 0 ;;
+      esac
+    done
   done
 ) &
 WATCH=$!
@@ -86,10 +93,9 @@ RC=${PIPESTATUS[0]}
 cd "$ROOT"
 
 kill $DIAG 2>/dev/null
-pkill -f "adb.*logcat" || true
 sleep 5
 echo DONE >> "$LOG"
-wait "$WATCH" 2>/dev/null || true
+sleep 3; kill $WATCH 2>/dev/null || true
 sleep 3
 adb pull /sdcard/session.mp4 "$OUT/session.mp4" || true
 adb exec-out screencap -p > "$OUT/zz-last.png" || true

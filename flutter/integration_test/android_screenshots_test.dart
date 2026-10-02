@@ -2,9 +2,11 @@
 // Запускается только воркфлоу android-screenshots.yml; на релизные сборки не влияет.
 //
 // Сам кадр снимает хост (`adb exec-out screencap`): так в нём настоящий статус-бар и
-// системная навигация. Тест печатает строку `SHOT <имя>` и стоит на месте 6 секунд, хост
-// по этой строке в логе делает снимок. Секреты приходят через --dart-define и не печатаются.
+// системная навигация. Тест кладёт файл-маркер в каталог данных приложения (print внутри
+// `flutter test` в logcat не попадает, а stdout приходит пачкой) и стоит на месте 6 секунд,
+// хост по маркеру делает снимок. Секреты приходят через --dart-define и не печатаются.
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hbb/common.dart';
@@ -21,6 +23,15 @@ const _pass = String.fromEnvironment('SHOTS_PASS');
 const _peerId = String.fromEnvironment('SHOTS_PEER_ID', defaultValue: '361107164');
 const _peerPass = String.fromEnvironment('SHOTS_PEER_PASS');
 
+const _markDir = '/data/user/0/com.carriez.flutter_hbb/app_flutter/shotreq';
+var _seq = 0;
+void _mark(String kind) {
+  debugPrint(kind);
+  Directory(_markDir).createSync(recursive: true);
+  _seq++;
+  File('$_markDir/${_seq.toString().padLeft(3, '0')}_$kind').writeAsStringSync('1');
+}
+
 Future<void> _wait(WidgetTester t, int seconds) async {
   for (var i = 0; i < seconds * 4; i++) {
     await t.pump(const Duration(milliseconds: 250));
@@ -29,7 +40,7 @@ Future<void> _wait(WidgetTester t, int seconds) async {
 
 Future<void> _shot(WidgetTester t, String name) async {
   await _wait(t, 2);
-  debugPrint('SHOT $name');
+  _mark('SHOT_$name');
   await _wait(t, 6);
 }
 
@@ -99,7 +110,7 @@ void main() {
     }
 
     // 03 — живой сеанс к демо-стенду
-    debugPrint('VIDEO start');
+    _mark('VIDEOSTART');
     await connect(globalKey.currentContext!, _peerId, password: _peerPass);
     final inSession =
         await _until(tester, () => gFFI.ffiModel.pi.displays.isNotEmpty, 90);
@@ -107,7 +118,7 @@ void main() {
     await _wait(tester, 10);
     await _shot(tester, '03-session');
     await _wait(tester, 30);
-    debugPrint('VIDEO stop');
-    debugPrint('DONE');
+    _mark('VIDEOSTOP');
+    _mark('DONE');
   }, timeout: const Timeout(Duration(minutes: 20)));
 }
