@@ -99,7 +99,9 @@ sleep 3; kill $WATCH 2>/dev/null || true
 sleep 3
 adb pull /sdcard/session.mp4 "$OUT/session.mp4" || true
 adb exec-out screencap -p > "$OUT/zz-last.png" || true
-adb logcat -d -s AndroidRuntime:E ActivityManager:I ActivityTaskManager:I flutter:I DEBUG:I libc:F 2>&1 | tail -400 > "$OUT/logcat-filtered.txt"
+adb logcat -d -s AndroidRuntime:E DEBUG:I libc:F 2>&1 | tail -200 > "$OUT/logcat-filtered.txt"
+# Лог rust-ядра (тег ffi) — только строки про соединение, без строк с секретами.
+adb logcat -d -s ffi:V 2>&1 | grep -i -E "rendezvous|relay|secure|punch|connect|timeout|fail|error|key" | grep -v -i -E "pass|pwd|token|secret" | tail -300 > "$OUT/ffi-filtered.txt"
 ls -la "$OUT"
 python3 - <<'PY'
 import struct, glob

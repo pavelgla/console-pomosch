@@ -109,12 +109,26 @@ void main() {
       await _wait(tester, 3);
     }
 
-    // 03 — живой сеанс к демо-стенду
+    // 03 — живой сеанс к демо-стенду (до трёх попыток: первая связь через реле бывает долгой)
     _mark('VIDEOSTART');
-    await connect(globalKey.currentContext!, _peerId, password: _peerPass);
-    final inSession =
-        await _until(tester, () => gFFI.ffiModel.pi.displays.isNotEmpty, 90);
-    debugPrint('SESSION ${inSession ? "up" : "DOWN"}');
+    var inSession = false;
+    for (var attempt = 1; attempt <= 3 && !inSession; attempt++) {
+      await connect(globalKey.currentContext!, _peerId, password: _peerPass);
+      inSession =
+          await _until(tester, () => gFFI.ffiModel.pi.displays.isNotEmpty, 60);
+      debugPrint('SESSION attempt $attempt ${inSession ? "up" : "DOWN"}');
+      if (!inSession) {
+        final ok = find.text('OK');
+        if (ok.evaluate().isNotEmpty) {
+          await tester.tap(ok.first);
+          await _wait(tester, 3);
+        }
+        if (find.byType(BottomNavigationBar).evaluate().isEmpty) {
+          Navigator.of(globalKey.currentContext!).popUntil((r) => r.isFirst);
+          await _wait(tester, 3);
+        }
+      }
+    }
     await _wait(tester, 10);
     await _shot(tester, '03-session');
     await _wait(tester, 30);
