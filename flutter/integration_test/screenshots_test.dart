@@ -89,6 +89,12 @@ void main() {
     await _wait(tester, 5);
     await _shot(tester, '02-address-book');
 
+    // Выход из учётки: с токеном клиент делает secure_tcp, а hbbs 1.1.16 KeyExchange не шлёт.
+    await gFFI.userModel.logOut();
+    await _wait(tester, 2);
+    expect(await bind.mainGetLocalOption(key: 'access_token'), isEmpty,
+        reason: 'после выхода токен должен быть пуст');
+
     // 03 — живой сеанс к демо-стенду
     var inSession = false;
     for (var attempt = 1; attempt <= 3 && !inSession; attempt++) {
