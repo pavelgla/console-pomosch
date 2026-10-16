@@ -4,8 +4,6 @@ name: macOS signing dry run
 # подписанный dmg уходит артефактом, смоук гоняется на раннере (w-all-platforms).
 on:
   workflow_dispatch:
-  push:  # ВРЕМЕННО на итерации волны: dispatch нового файла с ветки GitHub не принимает
-    branches: [w-all-platforms]
 
 jobs:
   run-macos-build:

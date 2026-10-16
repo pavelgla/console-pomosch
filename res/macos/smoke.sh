@@ -49,4 +49,4 @@ echo "--- лог клиента, без повторов ipc_service"
 grep -rh "" "$LOGDIR" 2>/dev/null | grep -v 'failed to connect to ipc_service' | tail -40 || true
 if grep -rqis 'panic' "$LOGDIR" "$MNT.out"; then echo "в логе panic" >&2; exit 1; fi
 [ -n "$ok" ] || { echo "нет регистрации на $HOST за 60 с (key_confirmed не true в $CFG)" >&2; exit 1; }
-echo "смоук ок: Gatekeeper принял, тикет пришит, клиент зарегистрирован на $HOST (ID $(grep -m1 '^id = ' "$CFG" | cut -d"'" -f2))"
+echo "смоук ок: Gatekeeper принял, тикет пришит, клиент зарегистрирован на $HOST (ID $(grep -rhoE 'Generated id [0-9]+|id updated from [0-9]+ to [0-9]+' "$LOGDIR" | tail -1 | grep -oE '[0-9]+$'))"
