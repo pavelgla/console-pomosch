@@ -47,4 +47,9 @@ for try in 1 2 3; do
   echo "нотаризация: попытка $try не удалась, повтор через 30 с" >&2
   sleep 30
 done
-xcrun stapler validate "$DMG"
+# validate ходит в CloudKit Apple; с раннера связь рвётся (16.10: NSURLError -1005)
+for try in 1 2 3; do
+  if xcrun stapler validate "$DMG"; then break; fi
+  [ "$try" -lt 3 ] || { echo "stapler validate не прошёл за 3 попытки" >&2; exit 1; }
+  sleep 15
+done

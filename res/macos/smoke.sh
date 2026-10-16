@@ -21,7 +21,12 @@ PID=""
 cleanup() { if [ -n "$PID" ]; then kill "$PID" 2>/dev/null || true; fi; hdiutil detach "$MNT" -quiet 2>/dev/null || true; }
 trap cleanup EXIT
 
-xcrun stapler validate "$DMG"
+# validate ходит в CloudKit Apple; с раннера связь рвётся (16.10: NSURLError -1005)
+for try in 1 2 3; do
+  if xcrun stapler validate "$DMG"; then break; fi
+  [ "$try" -lt 3 ] || { echo "stapler validate не прошёл за 3 попытки" >&2; exit 1; }
+  sleep 15
+done
 hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MNT" -quiet
 APP=$(find "$MNT" -maxdepth 1 -name '*.app' | head -1)
 [ -n "$APP" ] || { echo "в dmg нет .app" >&2; exit 1; }
