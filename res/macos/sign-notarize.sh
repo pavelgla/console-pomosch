@@ -39,5 +39,12 @@ create-dmg --icon "$(basename "$APP")" 200 190 --hide-extension "$(basename "$AP
 codesign --force --timestamp -s "$IDENTITY" "$DMG"
 
 echo "== нотаризация"
-rcodesign notary-submit --api-key-path "$NOTARY_JSON" --wait --staple "$DMG"
+# Сеть до appstoreconnect.apple.com с раннера рвётся (16.10: os error 60 при опросе статуса).
+# Повторная отправка того же dmg безопасна: Apple выдаст тикет на тот же cdhash.
+for try in 1 2 3; do
+  if rcodesign notary-submit --api-key-path "$NOTARY_JSON" --wait --staple "$DMG"; then break; fi
+  [ "$try" -lt 3 ] || { echo "нотаризация не прошла за 3 попытки" >&2; exit 1; }
+  echo "нотаризация: попытка $try не удалась, повтор через 30 с" >&2
+  sleep 30
+done
 xcrun stapler validate "$DMG"
