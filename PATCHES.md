@@ -4,6 +4,35 @@
 волны ребренда (T6–T71, начиная с 22.06.2026) в реестр задним числом не сведены, история по ним —
 в `~/projects/helpdesk/_SUMMARY.md` и коммитах ветки `rebrand`.
 
+## Волна `w-all-platforms` (16.10.2026) — rpm и подписанный macOS
+
+Спека: `~/projects/helpdesk/docs/superpowers/specs/2026-10-16-all-platforms-design.md`.
+План: `~/projects/helpdesk/plans/all-platforms.md`.
+Приёмка: `~/projects/helpdesk/tests/t74-all-platforms.sh`.
+
+- **rpm x86_64.** Новый `res/rpm-consolehelp.spec`: пакет `consolehelp`, Vendor `Console LLC`,
+  пути как у deb (`/usr/share/consolehelp`, юнит в `/usr/lib/systemd/system`, оба `.desktop`,
+  иконки), `AutoReqProv: no` (иначе rpmbuild впишет в Requires `.so` из бандла), `systemctl`
+  в скриптлетах только при запущенном systemd, `%preun`/`%postun` различают удаление и
+  обновление. Без `/etc/pam.d`, `startwm.sh`, `xorg.conf` (PAM-файл deb — debian-стек).
+  Апстримовые `res/rpm*.spec` не тронуты и не вызываются (ссылаются на удалённые ребрендом
+  `rustdesk.service`/`.desktop`). `flutter-build.yml`, джоб `build-rustdesk-linux`: на месте
+  комментария «rpm/suse пакеты отключены» — `rpmbuild` для x86_64 и шаг «Publish rpm package»
+  (`consolehelp-*-x86_64.rpm`).
+- **macOS: подпись Developer ID и нотаризация.** Апстримовый шаг «Codesign app and create signed
+  dmg» (`codesign --deep` без `--entitlements`) заменён на `res/macos/sign-notarize.sh`: подпись
+  изнутри наружу с hardened runtime и `--timestamp`, приложение — с `Release.entitlements`,
+  dmg, `rcodesign notary-submit --staple`. После него `res/macos/smoke.sh` на том же раннере:
+  `stapler validate`, `spctl` ждёт `Notarized Developer ID`, клиент `--server` стартует и
+  получает `keep_alive` от `rs.console10.ru`. Шаг «Rename rustdesk» убран (давал двойной
+  суффикс архитектуры), dmg называется `consolehelp-<версия>-<arch>.dmg`.
+  `Release.entitlements`: добавлены `cs.allow-unsigned-executable-memory` и
+  `cs.disable-library-validation` (hardened runtime). Входы `flutter-build.yml`:
+  `require-signing` (тег: без `MACOS_P12_BASE64` джоб падает первым шагом; сбой подписи
+  краснит джоб) и `macos-only` (остальные джобы, кроме `generate-bridge`, пропускаются).
+  `flutter-tag.yml` передаёт `require-signing: true`, nightly — нет (сбой нотаризации там
+  `continue-on-error`). Новый `macos-dispatch.yml` — ручной прогон только macOS с артефактом.
+
 ## Волна `w-rustore` (02.10.2026) — Android-клиент в RuStore
 
 Спека: `~/projects/helpdesk/docs/superpowers/specs/2026-10-01-rustore-android-design.md`.
