@@ -19,7 +19,7 @@ by_depth() { awk -F/ '{print NF"\t"$0}' | sort -rn | cut -f2-; }
 
 echo "== Mach-O внутри бандла"
 find "$APP/Contents" -type f ! -path "$MAIN_EXE" -print0 \
-  | while IFS= read -r -d '' f; do file -b "$f" | grep -q 'Mach-O' && printf '%s\n' "$f"; done \
+  | while IFS= read -r -d '' f; do if file -b "$f" | grep -q 'Mach-O'; then printf '%s\n' "$f"; fi; done \
   | by_depth | while IFS= read -r f; do sign "$f"; done
 
 echo "== вложенные бандлы"
