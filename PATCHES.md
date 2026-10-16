@@ -4,6 +4,22 @@
 волны ребренда (T6–T71, начиная с 22.06.2026) в реестр задним числом не сведены, история по ним —
 в `~/projects/helpdesk/_SUMMARY.md` и коммитах ветки `rebrand`.
 
+## Волна `w-all-platforms` (16.10.2026) — rpm и подписанный macOS
+
+Спека: `~/projects/helpdesk/docs/superpowers/specs/2026-10-16-all-platforms-design.md`.
+План: `~/projects/helpdesk/plans/all-platforms.md`.
+Приёмка: `~/projects/helpdesk/tests/t74-all-platforms.sh`.
+
+- **rpm x86_64.** Новый `res/rpm-consolehelp.spec`: пакет `consolehelp`, Vendor `Console LLC`,
+  пути как у deb (`/usr/share/consolehelp`, юнит в `/usr/lib/systemd/system`, оба `.desktop`,
+  иконки), `AutoReqProv: no` (иначе rpmbuild впишет в Requires `.so` из бандла), `systemctl`
+  в скриптлетах только при запущенном systemd, `%preun`/`%postun` различают удаление и
+  обновление. Без `/etc/pam.d`, `startwm.sh`, `xorg.conf` (PAM-файл deb — debian-стек).
+  Апстримовые `res/rpm*.spec` не тронуты и не вызываются (ссылаются на удалённые ребрендом
+  `rustdesk.service`/`.desktop`). `flutter-build.yml`, джоб `build-rustdesk-linux`: на месте
+  комментария «rpm/suse пакеты отключены» — `rpmbuild` для x86_64 и шаг «Publish rpm package»
+  (`consolehelp-*-x86_64.rpm`).
+
 ## Волна `w-rustore` (02.10.2026) — Android-клиент в RuStore
 
 Спека: `~/projects/helpdesk/docs/superpowers/specs/2026-10-01-rustore-android-design.md`.

@@ -1566,7 +1566,13 @@ jobs:
             for name in consolehelp*??.deb; do
               mv "$name" "${name%%.deb}-${{ matrix.job.arch }}.deb"
             done
-            # rpm/suse пакеты отключены (не раздаём) — ребренд только .deb
+            # rpm только x86_64 (w-all-platforms): ребрендированная спека, бандл тот же, что в deb.
+            # suse и aarch64 не раздаём.
+            if [ "${{ matrix.job.arch }}" = "x86_64" ]; then
+              sed -i "s/^Version:.*/Version:    ${{ env.VERSION }}/" ./res/rpm-consolehelp.spec
+              HBB=`pwd` rpmbuild -bb --define "_topdir /tmp/rpmbuild" ./res/rpm-consolehelp.spec
+              mv /tmp/rpmbuild/RPMS/x86_64/consolehelp-*.rpm "/workspace/consolehelp-${{ env.VERSION }}-x86_64.rpm"
+            fi
 
       - name: Publish debian package
         if: env.UPLOAD_ARTIFACT == 'true'
@@ -1576,6 +1582,15 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}
           files: |
             consolehelp-*.deb
+
+      - name: Publish rpm package
+        if: env.UPLOAD_ARTIFACT == 'true' && matrix.job.arch == 'x86_64'
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+        with:
+          prerelease: true
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            consolehelp-*-x86_64.rpm
 
       - name: Upload deb
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
